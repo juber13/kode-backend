@@ -97,30 +97,35 @@ app.post('/api/send-email' , async(req , res) => {
 
 
 // login route
-app.post('/api/login', async (req, res) => {
+app.post("/api/login", async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log(email, password);
     if (!email || !password)
-      return res.status(400).json({ message: "fields are required" });
+      return res.status(400).json({ message: "Fields are required" });
 
     if (!isValidEmail(email)) {
       return res.status(400).json({ message: "Invalid email address" });
     }
 
-    const isUserExits = await User.findOne({ email });
-    if (!isUserExits) return res.status(400).json({ message: "User not found"});
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: "User not found" });
 
-    const isPasswordValid = await bcrypt.compare(password, isUserExits.password);
-    if (!isPasswordValid) return res.status(400).json({ message: "Invalid password" });
-    
-    const token = await generateToken(newUser);
-    req.session.user = isUserExits;
-    res.status(200).json({ message: "Login successful", token , email : isUserExits.email}); 
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid)
+      return res.status(400).json({ message: "Invalid password" });
 
-  }catch(error){
-    console.log(error)
+    const token = await generateToken(user); // Use 'user' instead of 'newUser'
+    req.session.user = user; // Store user info in session
+    res
+      .status(200)
+      .json({ message: "Login successful", token, email: user.email });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
+
 
 // logout
 app.post("/api/logout", (req, res) => {
